@@ -13,7 +13,8 @@
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "lib": ["ES2020", "DOM"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "**/*.spec.ts"]
