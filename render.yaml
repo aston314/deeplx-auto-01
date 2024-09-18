@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: deeplx-auto-01
+    env: node
+    region: oregon  # You can change this to your preferred region
+    plan: free  # Change this if you need a paid plan
+    branch: main  # Adjust this if you use a different branch
+    repo: https://github.com/aston314/deeplx-auto-01.git
+    buildCommand: npm install && npm run build
+    startCommand: node --experimental-specifier-resolution=node --es-module-specifier-resolution=node dist/index.js
+    envVars:
+      - key: NODE_VERSION
+        value: 16
+    healthCheckPath: /
+    numInstances: 1
+    ports:
+      - 8000
