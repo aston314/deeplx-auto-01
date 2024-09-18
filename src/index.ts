@@ -1,5 +1,3 @@
-// index.ts
-
 import WebSocket from 'ws';
 import LRU from 'lru-cache';
 import { franc } from 'franc-min';
@@ -273,7 +271,7 @@ async function translateWithDeepLX(
         throw new Error(`DeepLX API error: ${response.statusText}`);
       }
 
-      const result = await response.json();
+      const result = await response.json() as any;
       const translation = result.data;
       console.log(`[DeepLX] 翻译成功: ${translation.substring(0, 50)}... (subtitleId: ${subtitleId})`);
       
@@ -289,7 +287,7 @@ async function translateWithDeepLX(
 
       translationCache.set(cacheKey, translatedTextWithMarkers);
       return translatedTextWithMarkers;
-    } catch (error) {
+    } catch (error: any) {
       console.error(`[DeepLX] 翻译失败 (subtitleId: ${subtitleId}):`, error);
       throw error;
     }
@@ -461,7 +459,7 @@ async function handleWebSocket(ws: WebSocket) {
           isTranslating = true;
           shouldStopTranslation = false;
           abortController = new AbortController();
-          const signal = abortController.signal;
+          const signal = abortController.signal as AbortSignal;
 
           const subtitlesToTranslate = subtitles.filter(sub => sub.startTime >= currentTime && !translatedSubtitleIds.has(sub.id));
           console.log(`[Translator] 筛选出 ${subtitlesToTranslate.length} 条字幕需要翻译`);
@@ -557,7 +555,7 @@ async function handleWebSocket(ws: WebSocket) {
                     );
                     console.log(`[Translator] 翻译完成: ${translatedText.substring(0, 50)}...`);
                     return { ...item, translatedText };
-                  } catch (error) {
+                  } catch (error: any) {
                     console.error(`[Translator] 翻译失败: ${error.message}`);
                     if (error.name === 'AbortError' || error.message === "Translation stopped") {
                       throw error;
