@@ -1,5 +1,6 @@
 // import WebSocket from 'ws';
-import { WebSocketServer } from 'ws';
+// import { WebSocketServer } from 'ws';
+import WebSocket, { WebSocketServer } from 'ws';
 import LRU from 'lru-cache';
 import { franc } from 'franc-min';
 import fetch from 'node-fetch';
@@ -427,7 +428,8 @@ async function handleWebSocket(ws: WebSocket) {
     }
   }
 
-  ws.on("message", async (message: string) => {
+  // ws.on("message", async (message: string) => {
+  ws.on("message", async (message: WebSocket.Data) => {
     if (!isConnected) return;
 
     try {
@@ -642,7 +644,8 @@ async function handleWebSocket(ws: WebSocket) {
     }
   });
 
-  ws.on("error", async (error) => {
+  // ws.on("error", async (error) => {
+  ws.on("error", (error: Error) => {
     console.error("[WebSocket] 发生错误:", error);
     if (isTranslating) {
       await stopTranslation();
@@ -651,7 +654,12 @@ async function handleWebSocket(ws: WebSocket) {
 }
 
 // 设置WebSocket服务器
-const wss = new WebSocket.Server({ port: 8000 });
+// const wss = new WebSocket.Server({ port: 8000 });
+
+// wss.on("connection", (ws: WebSocket) => {
+//   handleWebSocket(ws);
+// });
+const wss = new WebSocketServer({ port: 8000 });
 
 wss.on("connection", (ws: WebSocket) => {
   handleWebSocket(ws);
