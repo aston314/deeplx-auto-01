@@ -342,7 +342,7 @@ function mergeSubtitles(subtitles: SubtitleEntry[]): SubtitleEntry[] {
 function mergeGroup(group: SubtitleEntry[]): SubtitleEntry {
   const mergedText = group.map(sub => sub.text.replace(/\n/g, '<br>')).join(config.SUBTITLE_SEPARATOR);
   return {
-    id: `merged_${group[0].id}_to_${[group.length - 1].id}`,
+    id: `merged_${group[0].id}_to_${group[group.length - 1].id}`,
     startTime: group[0].startTime,
     endTime: group[group.length - 1].endTime,
     text: mergedText,
