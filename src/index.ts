@@ -2,7 +2,15 @@ import WebSocket, { WebSocketServer } from 'ws';
 import LRU from 'lru-cache';
 import { franc } from 'franc-min';
 import fetch from 'node-fetch';
-import { AbortController } from 'node-abort-controller';
+import { AbortController, AbortSignal as NodeAbortSignal } from 'node-abort-controller';
+
+// 扩展 AbortSignal 接口以兼容 node-abort-controller
+declare global {
+  interface AbortSignal extends NodeAbortSignal {}
+}
+
+// 创建一个类型别名来使用扩展后的 AbortSignal
+type ExtendedAbortSignal = AbortSignal;
 
 // 全局配置
 const config = {
@@ -28,7 +36,34 @@ const languageCodeMapping: { [key: string]: string } = {
   'zho': 'ZH',
   'yue': 'ZH-TW',
   'eng': 'EN',
-  // ... 其他语言代码
+  'jpn': 'JA',
+  'kor': 'KO',
+  'fra': 'FR',
+  'deu': 'DE',
+  'spa': 'ES',
+  'rus': 'RU',
+  'por': 'PT',
+  'ita': 'IT',
+  'nld': 'NL',
+  'pol': 'PL',
+  'bul': 'BG',
+  'ces': 'CS',
+  'dan': 'DA',
+  'ell': 'EL',
+  'est': 'ET',
+  'fin': 'FI',
+  'hun': 'HU',
+  'ind': 'ID',
+  'lit': 'LT',
+  'lav': 'LV',
+  'nob': 'NB',
+  'nno': 'NB',
+  'ron': 'RO',
+  'slk': 'SK',
+  'slv': 'SL',
+  'swe': 'SV',
+  'tur': 'TR',
+  'ukr': 'UK',
 };
 
 // 接口定义
@@ -201,7 +236,7 @@ async function translateWithDeepLX(
   sourceLanguage: string,
   targetLanguage: string,
   subtitleId: string,
-  signal: AbortSignal
+  signal: ExtendedAbortSignal
 ): Promise<string> {
   const cacheKey = `${sourceLanguage}-${targetLanguage}-${subtitleId}-${text}`;
   console.log(`[DeepLX] 尝试翻译文本 (subtitleId: ${subtitleId})`);
@@ -230,7 +265,7 @@ async function translateWithDeepLX(
           source_lang: sourceLanguage,
           target_lang: targetLanguage,
         }),
-        signal,
+        signal: signal as AbortSignal,
       });
       const endTime = Date.now();
       performanceMonitor.updateApiResponseTime(endTime - startTime);
@@ -278,7 +313,7 @@ async function translateWithFallback(
   sourceLanguage: string,
   targetLanguage: string,
   subtitleId: string,
-  signal: AbortSignal
+  signal: ExtendedAbortSignal
 ): Promise<string> {
   try {
     console.log(`[Fallback] 尝试整体翻译 (subtitleId: ${subtitleId})`);
@@ -432,7 +467,7 @@ async function handleWebSocket(ws: WebSocket) {
           isTranslating = true;
           shouldStopTranslation = false;
           abortController = new AbortController();
-          const signal = abortController.signal;
+          const signal = abortController.signal as ExtendedAbortSignal;
 
           const subtitlesToTranslate = subtitles.filter(sub => sub.startTime >= currentTime && !translatedSubtitleIds.has(sub.id));
           console.log(`[Translator] 筛选出 ${subtitlesToTranslate.length} 条字幕需要翻译`);
@@ -653,4 +688,7 @@ async function main() {
 }
 
 // 运行主函数
-main().catch(console.error);
+main().catch(error => {
+  console.error("运行主函数时发生错误:", error);
+  process.exit(1);
+});
