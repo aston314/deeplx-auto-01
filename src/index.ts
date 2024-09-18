@@ -1,5 +1,3 @@
-// import WebSocket from 'ws';
-// import { WebSocketServer } from 'ws';
 import WebSocket, { WebSocketServer } from 'ws';
 import LRU from 'lru-cache';
 import { franc } from 'franc-min';
@@ -30,34 +28,7 @@ const languageCodeMapping: { [key: string]: string } = {
   'zho': 'ZH',
   'yue': 'ZH-TW',
   'eng': 'EN',
-  'jpn': 'JA',
-  'kor': 'KO',
-  'fra': 'FR',
-  'deu': 'DE',
-  'spa': 'ES',
-  'rus': 'RU',
-  'por': 'PT',
-  'ita': 'IT',
-  'nld': 'NL',
-  'pol': 'PL',
-  'bul': 'BG',
-  'ces': 'CS',
-  'dan': 'DA',
-  'ell': 'EL',
-  'est': 'ET',
-  'fin': 'FI',
-  'hun': 'HU',
-  'ind': 'ID',
-  'lit': 'LT',
-  'lav': 'LV',
-  'nob': 'NB',
-  'nno': 'NB',
-  'ron': 'RO',
-  'slk': 'SK',
-  'slv': 'SL',
-  'swe': 'SV',
-  'tur': 'TR',
-  'ukr': 'UK',
+  // ... 其他语言代码
 };
 
 // 接口定义
@@ -371,7 +342,7 @@ function mergeSubtitles(subtitles: SubtitleEntry[]): SubtitleEntry[] {
 function mergeGroup(group: SubtitleEntry[]): SubtitleEntry {
   const mergedText = group.map(sub => sub.text.replace(/\n/g, '<br>')).join(config.SUBTITLE_SEPARATOR);
   return {
-    id: `merged_${group[0].id}_to_${group[group.length - 1].id}`,
+    id: `merged_${group[0].id}_to_${[group.length - 1].id}`,
     startTime: group[0].startTime,
     endTime: group[group.length - 1].endTime,
     text: mergedText,
@@ -428,12 +399,11 @@ async function handleWebSocket(ws: WebSocket) {
     }
   }
 
-  // ws.on("message", async (message: string) => {
   ws.on("message", async (message: WebSocket.Data) => {
     if (!isConnected) return;
 
     try {
-      const data = JSON.parse(message);
+      const data = typeof message === 'string' ? JSON.parse(message) : JSON.parse(message.toString());
 
       switch (data.action) {
         case "initialize":
@@ -462,7 +432,7 @@ async function handleWebSocket(ws: WebSocket) {
           isTranslating = true;
           shouldStopTranslation = false;
           abortController = new AbortController();
-          const signal = abortController.signal as AbortSignal;
+          const signal = abortController.signal;
 
           const subtitlesToTranslate = subtitles.filter(sub => sub.startTime >= currentTime && !translatedSubtitleIds.has(sub.id));
           console.log(`[Translator] 筛选出 ${subtitlesToTranslate.length} 条字幕需要翻译`);
@@ -644,8 +614,7 @@ async function handleWebSocket(ws: WebSocket) {
     }
   });
 
-  // ws.on("error", async (error) => {
-  ws.on("error", (error: Error) => {
+  ws.on("error", async (error: Error) => {
     console.error("[WebSocket] 发生错误:", error);
     if (isTranslating) {
       await stopTranslation();
@@ -653,34 +622,35 @@ async function handleWebSocket(ws: WebSocket) {
   });
 }
 
-// 设置WebSocket服务器
-// const wss = new WebSocket.Server({ port: 8000 });
+// 主函数
+async function main() {
+  // 设置WebSocket服务器
+  const wss = new WebSocketServer({ port: 8000 });
 
-// wss.on("connection", (ws: WebSocket) => {
-//   handleWebSocket(ws);
-// });
-const wss = new WebSocketServer({ port: 8000 });
-
-wss.on("connection", (ws: WebSocket) => {
-  handleWebSocket(ws);
-});
-
-// 添加每日分析的定时器
-const dailyAnalysisInterval = setInterval(async () => {
-  const dailyData = performanceMonitor.getDailyData();
-  await PerformanceAnalyzer.analyzeDailyPerformance(dailyData);
-  performanceMonitor.clearDailyData();
-}, 24 * 60 * 60 * 1000); // 每24小时运行一次
-
-// 确保在程序退出时清理定时器
-process.on("SIGINT", () => {
-  clearInterval(dailyAnalysisInterval);
-  // 其他清理代码...
-  console.log("正在关闭服务器...");
-  wss.close(() => {
-    console.log("WebSocket 服务器已关闭");
-    process.exit(0);
+  wss.on("connection", (ws: WebSocket) => {
+    handleWebSocket(ws);
   });
-});
 
-console.log("WebSocket 字幕翻译服务器正在运行，地址为 ws://localhost:8000");
+  // 添加每日分析的定时器
+  const dailyAnalysisInterval = setInterval(async () => {
+    const dailyData = performanceMonitor.getDailyData();
+    await PerformanceAnalyzer.analyzeDailyPerformance(dailyData);
+    performanceMonitor.clearDailyData();
+  }, 24 * 60 * 60 * 1000); // 每24小时运行一次
+
+  // 确保在程序退出时清理定时器
+  process.on("SIGINT", () => {
+    clearInterval(dailyAnalysisInterval);
+    // 其他清理代码...
+    console.log("正在关闭服务器...");
+    wss.close(() => {
+      console.log("WebSocket 服务器已关闭");
+      process.exit(0);
+    });
+  });
+
+  console.log("WebSocket 字幕翻译服务器正在运行，地址为 ws://localhost:8000");
+}
+
+// 运行主函数
+main().catch(console.error);
