@@ -1,4 +1,5 @@
-import WebSocket from 'ws';
+// import WebSocket from 'ws';
+import { WebSocketServer } from 'ws';
 import LRU from 'lru-cache';
 import { franc } from 'franc-min';
 import fetch from 'node-fetch';
